@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "POS Abarrotes - Inventario",
-  description: "Sistema de control de entradas y salidas de almacen",
+  title: "MiAppCatálogo",
+  description: "Registra y visualiza productos en tu catálogo",
 };
 
 export default function RootLayout({

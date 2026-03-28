@@ -1,893 +1,217 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 
-type VistaActiva = "tienda" | "almacen";
-
-interface Producto {
-  codigo: string;
-  nombre: string;
-  descripcion: string;
-  unidad: string;
-  stock_minimo: number;
-  stock_actual: number;
-  precio: number;
-}
-
-interface Movimiento {
+export interface Product {
   id: string;
-  codigo: string;
-  nombre: string;
-  tipo: "Entrada" | "Salida";
-  cantidad: number;
-  motivo: string;
-  destino?: string;
-  proveedor?: string;
-  fecha: string;
+  name: string;
+  details: string;
+  value: number;
 }
 
-type Carrito = Record<string, number>;
-
-const INVENTARIO_KEY = "abarrotes_inventario";
-const CARRITO_KEY = "abarrotes_carrito";
-const MOVIMIENTOS_KEY = "abarrotes_movimientos";
-const VISTA_KEY = "abarrotes_vista";
-const PROVEEDORES_KEY = "abarrotes_proveedores";
-
-const INVENTARIO_INICIAL: Producto[] = [
-  { codigo: "A001", nombre: "Arroz", descripcion: "Bolsa de 1 kg", unidad: "pieza", stock_minimo: 5, stock_actual: 20, precio: 25 },
-  { codigo: "A002", nombre: "Frijol Pinto", descripcion: "Bolsa de 1 kg", unidad: "pieza", stock_minimo: 5, stock_actual: 15, precio: 30 },
-  { codigo: "A003", nombre: "Azucar", descripcion: "Bolsa de 1 kg", unidad: "pieza", stock_minimo: 5, stock_actual: 25, precio: 28 },
-  { codigo: "A004", nombre: "Aceite Vegetal", descripcion: "Botella 1 Litro", unidad: "pieza", stock_minimo: 4, stock_actual: 12, precio: 45 },
-  { codigo: "A005", nombre: "Leche Entera", descripcion: "Caja 1 Litro", unidad: "pieza", stock_minimo: 6, stock_actual: 30, precio: 22 },
-  { codigo: "A006", nombre: "Huevos", descripcion: "Cartera con 30 piezas", unidad: "pieza", stock_minimo: 3, stock_actual: 10, precio: 80 },
-  { codigo: "A007", nombre: "Pan de Caja", descripcion: "Blanco grande", unidad: "pieza", stock_minimo: 4, stock_actual: 15, precio: 40 },
-  { codigo: "A008", nombre: "Atun en Agua", descripcion: "Lata 140g", unidad: "pieza", stock_minimo: 10, stock_actual: 40, precio: 20 },
-  { codigo: "A009", nombre: "Mayonesa", descripcion: "Frasco 400g", unidad: "pieza", stock_minimo: 4, stock_actual: 12, precio: 45 },
-  { codigo: "A010", nombre: "Pure de Tomate", descripcion: "Tetrapak 210g", unidad: "pieza", stock_minimo: 8, stock_actual: 35, precio: 8 },
-  { codigo: "A011", nombre: "Sopa de Pasta", descripcion: "Fideo 200g", unidad: "pieza", stock_minimo: 10, stock_actual: 50, precio: 6 },
-  { codigo: "A012", nombre: "Galletas", descripcion: "Paquete tipo Maria", unidad: "pieza", stock_minimo: 5, stock_actual: 20, precio: 18 },
-  { codigo: "A013", nombre: "Cafe Soluble", descripcion: "Frasco 200g", unidad: "pieza", stock_minimo: 3, stock_actual: 8, precio: 85 },
-  { codigo: "A014", nombre: "Cereal", descripcion: "Hojuelas de maiz 500g", unidad: "pieza", stock_minimo: 4, stock_actual: 12, precio: 65 },
-  { codigo: "A015", nombre: "Papel Higienico", descripcion: "Paquete 4 rollos", unidad: "paquete", stock_minimo: 5, stock_actual: 18, precio: 35 },
-  { codigo: "A016", nombre: "Jabon en Polvo", descripcion: "Bolsa 1kg", unidad: "pieza", stock_minimo: 4, stock_actual: 14, precio: 38 },
-  { codigo: "A017", nombre: "Jabon de Barra", descripcion: "Para lavanderia", unidad: "pieza", stock_minimo: 5, stock_actual: 25, precio: 15 },
-  { codigo: "A018", nombre: "Refresco Cola", descripcion: "Botella 2 Litros", unidad: "pieza", stock_minimo: 6, stock_actual: 24, precio: 35 },
-  { codigo: "A019", nombre: "Agua Purificada", descripcion: "Garrafon 20L", unidad: "pieza", stock_minimo: 5, stock_actual: 15, precio: 40 },
-  { codigo: "A020", nombre: "Sal de Mesa", descripcion: "Bolsa 1kg", unidad: "pieza", stock_minimo: 5, stock_actual: 20, precio: 12 },
-];
-
-const PROVEEDORES_INICIALES = [
-  "Distribuidora La Central",
-  "Mayoreo El Buen Precio",
-  "Abarrotes Unidos del Norte",
-];
-
-const NUEVO_PRODUCTO_INICIAL = {
-  codigo: "",
-  nombre: "",
-  descripcion: "",
-  unidad: "pieza",
-  stock_minimo: "",
-  stock_actual: "",
-  precio: "",
+const INITIAL_FORM = {
+  name: "",
+  details: "",
+  value: "",
 };
 
+function BoxIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      width="64"
+      height="64"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+      <line x1="12" y1="22.08" x2="12" y2="12" />
+    </svg>
+  );
+}
+
 export default function Home() {
-  const [inventario, setInventario] = useState<Producto[]>(INVENTARIO_INICIAL);
-  const [carrito, setCarrito] = useState<Carrito>({});
-  const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
-  const [vistaActiva, setVistaActiva] = useState<VistaActiva>("tienda");
-  const [entradaPorProducto, setEntradaPorProducto] = useState<Record<string, string>>({});
-  const [proveedorPorProducto, setProveedorPorProducto] = useState<Record<string, string>>({});
-  const [proveedores] = useState<string[]>(PROVEEDORES_INICIALES);
-  const [salidaForm, setSalidaForm] = useState({
-    fecha: new Date().toISOString().slice(0, 10),
-    codigo: INVENTARIO_INICIAL[0]?.codigo ?? "",
-    cantidad: "1",
-    destino: "",
-    motivo: "Venta",
-  });
-  const [nuevoProducto, setNuevoProducto] = useState(NUEVO_PRODUCTO_INICIAL);
-  const [mensajeAdmin, setMensajeAdmin] = useState("");
-  const [isHydrated, setIsHydrated] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const inventarioGuardado = localStorage.getItem(INVENTARIO_KEY);
-    const carritoGuardado = localStorage.getItem(CARRITO_KEY);
-    const movimientosGuardados = localStorage.getItem(MOVIMIENTOS_KEY);
-    const vistaGuardada = localStorage.getItem(VISTA_KEY);
-    const proveedoresGuardados = localStorage.getItem(PROVEEDORES_KEY);
+  const handleAddProduct = () => {
+    const name = form.name.trim();
+    const details = form.details.trim();
+    const valueRaw = form.value.trim();
 
-    if (inventarioGuardado) {
-      setInventario(JSON.parse(inventarioGuardado) as Producto[]);
-    }
-    if (carritoGuardado) {
-      setCarrito(JSON.parse(carritoGuardado) as Carrito);
-    }
-    if (movimientosGuardados) {
-      setMovimientos(JSON.parse(movimientosGuardados) as Movimiento[]);
-    }
-    if (vistaGuardada === "tienda" || vistaGuardada === "almacen") {
-      setVistaActiva(vistaGuardada);
-    }
-    if (proveedoresGuardados) {
-      try {
-        const parsed = JSON.parse(proveedoresGuardados) as string[];
-        if (parsed.length > 0) {
-          // mantenemos estado estable para los proveedores ficticios iniciales
-          void parsed;
-        }
-      } catch {
-        // ignorar valor invalido y conservar proveedores iniciales
-      }
-    }
-    setIsHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    localStorage.setItem(INVENTARIO_KEY, JSON.stringify(inventario));
-  }, [inventario, isHydrated]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    localStorage.setItem(CARRITO_KEY, JSON.stringify(carrito));
-  }, [carrito, isHydrated]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    localStorage.setItem(MOVIMIENTOS_KEY, JSON.stringify(movimientos));
-  }, [movimientos, isHydrated]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    localStorage.setItem(VISTA_KEY, vistaActiva);
-  }, [vistaActiva, isHydrated]);
-
-  useEffect(() => {
-    if (!isHydrated) return;
-    localStorage.setItem(PROVEEDORES_KEY, JSON.stringify(proveedores));
-  }, [proveedores, isHydrated]);
-
-  const totalPiezasCarrito = useMemo(
-    () => Object.values(carrito).reduce((acc, qty) => acc + qty, 0),
-    [carrito],
-  );
-
-  const totalCarrito = useMemo(
-    () =>
-      inventario.reduce((acc, producto) => {
-        const qty = carrito[producto.codigo] ?? 0;
-        return acc + qty * producto.precio;
-      }, 0),
-    [inventario, carrito],
-  );
-
-  const resumenAlmacen = useMemo(() => {
-    const totalEntradas = movimientos
-      .filter((movimiento) => movimiento.tipo === "Entrada")
-      .reduce((acc, movimiento) => acc + movimiento.cantidad, 0);
-    const totalSalidas = movimientos
-      .filter((movimiento) => movimiento.tipo === "Salida")
-      .reduce((acc, movimiento) => acc + movimiento.cantidad, 0);
-    const productosBajoStock = inventario.filter(
-      (producto) => producto.stock_actual <= producto.stock_minimo,
-    );
-
-    const usoPorProducto = movimientos
-      .filter((movimiento) => movimiento.tipo === "Salida")
-      .reduce<Record<string, number>>((acc, movimiento) => {
-        acc[movimiento.codigo] = (acc[movimiento.codigo] ?? 0) + movimiento.cantidad;
-        return acc;
-      }, {});
-
-    const productosMasUtilizados = Object.entries(usoPorProducto)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([codigo, total]) => {
-        const producto = inventario.find((item) => item.codigo === codigo);
-        return {
-          codigo,
-          nombre: producto?.nombre ?? codigo,
-          total,
-        };
-      });
-
-    return {
-      totalEntradas,
-      totalSalidas,
-      productosBajoStock,
-      productosMasUtilizados,
-    };
-  }, [movimientos, inventario]);
-
-  const agregarAlCarrito = (codigo: string) => {
-    const producto = inventario.find((item) => item.codigo === codigo);
-    if (!producto) return;
-
-    const cantidadEnCarrito = carrito[codigo] ?? 0;
-    const disponible = producto.stock_actual - cantidadEnCarrito;
-    if (disponible <= 0) return;
-
-    setCarrito((prev) => ({
-      ...prev,
-      [codigo]: cantidadEnCarrito + 1,
-    }));
-  };
-
-  const quitarDelCarrito = (codigo: string) => {
-    setCarrito((prev) => {
-      const actual = prev[codigo] ?? 0;
-      if (actual <= 1) {
-        const { [codigo]: eliminado, ...resto } = prev;
-        void eliminado;
-        return resto;
-      }
-      return { ...prev, [codigo]: actual - 1 };
-    });
-  };
-
-  const finalizarCompra = () => {
-    const codigosConCompra = Object.keys(carrito).filter((codigo) => (carrito[codigo] ?? 0) > 0);
-    if (codigosConCompra.length === 0) return;
-
-    const fecha = new Date().toISOString();
-    const nuevosMovimientos: Movimiento[] = [];
-
-    const inventarioActualizado = inventario.map((producto) => {
-      const cantidad = carrito[producto.codigo] ?? 0;
-      if (cantidad <= 0) return producto;
-
-      nuevosMovimientos.push({
-        id: crypto.randomUUID(),
-        codigo: producto.codigo,
-        nombre: producto.nombre,
-        tipo: "Salida",
-        cantidad,
-        motivo: "Venta",
-        destino: "Cliente mostrador",
-        fecha,
-      });
-
-      return {
-        ...producto,
-        stock_actual: Math.max(producto.stock_actual - cantidad, 0),
-      };
-    });
-
-    setInventario(inventarioActualizado);
-    setMovimientos((prev) => [...nuevosMovimientos, ...prev]);
-    setCarrito({});
-  };
-
-  const registrarEntrada = (codigo: string) => {
-    const entradaTexto = entradaPorProducto[codigo] ?? "";
-    const cantidad = Number(entradaTexto);
-    if (!Number.isInteger(cantidad) || cantidad <= 0) return;
-
-    const fecha = new Date().toISOString();
-    const producto = inventario.find((item) => item.codigo === codigo);
-    if (!producto) return;
-
-    setInventario((prev) =>
-      prev.map((item) =>
-        item.codigo === codigo
-          ? { ...item, stock_actual: item.stock_actual + cantidad }
-          : item,
-      ),
-    );
-
-    setMovimientos((prev) => [
-      {
-        id: crypto.randomUUID(),
-        codigo: producto.codigo,
-        nombre: producto.nombre,
-        tipo: "Entrada",
-        cantidad,
-        motivo: "Abastecimiento",
-        proveedor:
-          proveedorPorProducto[codigo] ??
-          proveedores[0] ??
-          "Proveedor no especificado",
-        fecha,
-      },
-      ...prev,
-    ]);
-
-    setEntradaPorProducto((prev) => ({ ...prev, [codigo]: "" }));
-  };
-
-  const registrarSalidaManual = () => {
-    const cantidad = Number(salidaForm.cantidad);
-    if (!Number.isInteger(cantidad) || cantidad <= 0) {
-      setMensajeAdmin("La cantidad de salida debe ser un entero mayor a 0.");
-      return;
-    }
-    if (!salidaForm.codigo) {
-      setMensajeAdmin("Selecciona un producto para registrar la salida.");
-      return;
-    }
-    if (!salidaForm.destino.trim()) {
-      setMensajeAdmin("Ingresa el destino de la salida.");
+    if (!name || !details || !valueRaw) {
+      setFormError("Completa todos los campos antes de agregar el producto.");
       return;
     }
 
-    const producto = inventario.find((item) => item.codigo === salidaForm.codigo);
-    if (!producto) {
-      setMensajeAdmin("No se encontro el producto seleccionado.");
-      return;
-    }
-    if (producto.stock_actual < cantidad) {
-      setMensajeAdmin("No hay stock suficiente para registrar esa salida.");
+    const parsed = Number(valueRaw.replace(",", "."));
+    if (Number.isNaN(parsed)) {
+      setFormError("El valor debe ser un número válido.");
       return;
     }
 
-    const fechaSalida = new Date(salidaForm.fecha);
-    const fechaISO = Number.isNaN(fechaSalida.getTime())
-      ? new Date().toISOString()
-      : fechaSalida.toISOString();
-
-    setInventario((prev) =>
-      prev.map((item) =>
-        item.codigo === salidaForm.codigo
-          ? { ...item, stock_actual: item.stock_actual - cantidad }
-          : item,
-      ),
-    );
-    setMovimientos((prev) => [
-      {
-        id: crypto.randomUUID(),
-        codigo: producto.codigo,
-        nombre: producto.nombre,
-        tipo: "Salida",
-        cantidad,
-        destino: salidaForm.destino.trim(),
-        motivo: salidaForm.motivo,
-        fecha: fechaISO,
-      },
-      ...prev,
-    ]);
-    setMensajeAdmin("Salida registrada correctamente.");
-    setSalidaForm((prev) => ({ ...prev, cantidad: "1", destino: "" }));
-  };
-
-  const registrarProducto = () => {
-    if (
-      !nuevoProducto.codigo.trim() ||
-      !nuevoProducto.nombre.trim() ||
-      !nuevoProducto.descripcion.trim()
-    ) {
-      setMensajeAdmin("Completa codigo, nombre y descripcion del producto.");
-      return;
-    }
-
-    const stockMinimo = Number(nuevoProducto.stock_minimo);
-    const stockActual = Number(nuevoProducto.stock_actual);
-    const precio = Number(nuevoProducto.precio);
-    if (
-      !Number.isInteger(stockMinimo) ||
-      stockMinimo < 0 ||
-      !Number.isInteger(stockActual) ||
-      stockActual < 0 ||
-      Number.isNaN(precio) ||
-      precio <= 0
-    ) {
-      setMensajeAdmin("Revisa stock minimo, stock actual y precio.");
-      return;
-    }
-
-    const codigo = nuevoProducto.codigo.trim().toUpperCase();
-    if (inventario.some((producto) => producto.codigo === codigo)) {
-      setMensajeAdmin("Ya existe un producto con ese codigo.");
-      return;
-    }
-
-    setInventario((prev) => [
+    setFormError(null);
+    setProducts((prev) => [
       ...prev,
       {
-        codigo,
-        nombre: nuevoProducto.nombre.trim(),
-        descripcion: nuevoProducto.descripcion.trim(),
-        unidad: nuevoProducto.unidad.trim() || "pieza",
-        stock_minimo: stockMinimo,
-        stock_actual: stockActual,
-        precio,
+        id: crypto.randomUUID(),
+        name,
+        details,
+        value: parsed,
       },
     ]);
-    setNuevoProducto(NUEVO_PRODUCTO_INICIAL);
-    setMensajeAdmin("Producto registrado correctamente.");
+    setForm(INITIAL_FORM);
   };
 
   return (
-    <div className="min-h-screen bg-sky-100 text-slate-900">
-      <header className="border-b border-sky-300 bg-sky-500 px-6 py-4 text-white">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold tracking-tight">
-            Sistema de Control de Entradas y Salidas de Almacen
+    <div className="flex min-h-screen flex-col bg-zinc-50 text-zinc-900">
+      <header className="border-b border-zinc-200/80 bg-white/80 backdrop-blur-sm">
+        <div className="mx-auto flex w-full max-w-6xl items-center px-4 py-5 sm:px-6">
+          <h1 className="text-xl font-bold tracking-tight text-zinc-900 sm:text-2xl">
+            MiAppCatálogo
           </h1>
-          <div className="rounded-full bg-sky-200/30 px-4 py-1 text-sm font-semibold">
-            Carrito: {totalPiezasCarrito} productos
-          </div>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-6 py-8">
-        <div className="mb-6 flex gap-3">
-          <button
-            type="button"
-            onClick={() => setVistaActiva("tienda")}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              vistaActiva === "tienda"
-                ? "bg-sky-500 text-white"
-                : "bg-white text-sky-700 ring-1 ring-sky-300"
-            }`}
-          >
-            Vista de Tienda (Salidas)
-          </button>
-          <button
-            type="button"
-            onClick={() => setVistaActiva("almacen")}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              vistaActiva === "almacen"
-                ? "bg-sky-500 text-white"
-                : "bg-white text-sky-700 ring-1 ring-sky-300"
-            }`}
-          >
-            Panel de Almacen (Admin)
-          </button>
-        </div>
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:gap-8">
+        <section className="flex w-full flex-col lg:max-w-md lg:flex-shrink-0 xl:max-w-lg">
+          <div className="rounded-xl border border-zinc-100 bg-white p-6 shadow-md shadow-zinc-200/50">
+            <h2 className="text-lg font-bold text-zinc-900 sm:text-xl">Registrar Producto</h2>
+            <p className="mt-1 text-sm text-zinc-500">
+              Ingresa los detalles para añadir un nuevo artículo al catálogo.
+            </p>
 
-        {vistaActiva === "tienda" ? (
-          <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-sky-200">
-              <h2 className="text-xl font-bold text-sky-700">Productos de Abarrotes</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Agrega productos al carrito. El stock disponible baja en tiempo real.
-              </p>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {inventario.map((producto) => {
-                  const enCarrito = carrito[producto.codigo] ?? 0;
-                  const disponible = producto.stock_actual - enCarrito;
-                  const enMinimo = disponible <= producto.stock_minimo;
-
-                  return (
-                    <article
-                      key={producto.codigo}
-                      className="rounded-xl bg-sky-50 p-4 ring-1 ring-sky-200"
-                    >
-                      <h3 className="text-lg font-semibold text-slate-900">{producto.nombre}</h3>
-                      <p className="mt-1 text-sm text-slate-600">{producto.descripcion}</p>
-                      <p className="mt-2 text-sm font-bold text-sky-700">${producto.precio.toFixed(2)}</p>
-                      <p
-                        className={`mt-1 text-sm font-medium ${
-                          enMinimo ? "text-rose-700" : "text-slate-600"
-                        }`}
-                      >
-                        Quedan {disponible} productos disponibles
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => agregarAlCarrito(producto.codigo)}
-                        disabled={disponible <= 0}
-                        className="mt-4 w-full rounded-lg bg-sky-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-sky-300"
-                      >
-                        Agregar al carrito
-                      </button>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-
-            <aside className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-sky-200">
-              <h2 className="text-xl font-bold text-sky-700">Carrito</h2>
-              {totalPiezasCarrito === 0 ? (
-                <p className="mt-3 text-sm text-slate-600">No hay productos en el carrito.</p>
-              ) : (
-                <>
-                  <ul className="mt-4 space-y-3">
-                    {inventario
-                      .filter((producto) => (carrito[producto.codigo] ?? 0) > 0)
-                      .map((producto) => {
-                        const cantidad = carrito[producto.codigo] ?? 0;
-                        return (
-                          <li
-                            key={producto.codigo}
-                            className="rounded-lg bg-sky-50 p-3 ring-1 ring-sky-200"
-                          >
-                            <p className="text-sm font-semibold text-slate-900">{producto.nombre}</p>
-                            <p className="text-xs text-slate-600">
-                              {cantidad} x ${producto.precio.toFixed(2)}
-                            </p>
-                            <div className="mt-2 flex items-center justify-between">
-                              <p className="text-sm font-bold text-sky-700">
-                                ${(cantidad * producto.precio).toFixed(2)}
-                              </p>
-                              <button
-                                type="button"
-                                onClick={() => quitarDelCarrito(producto.codigo)}
-                                className="rounded-md bg-sky-200 px-2 py-1 text-xs font-semibold text-sky-900 hover:bg-sky-300"
-                              >
-                                Quitar uno
-                              </button>
-                            </div>
-                          </li>
-                        );
-                      })}
-                  </ul>
-                  <div className="mt-4 border-t border-sky-200 pt-4">
-                    <p className="text-sm text-slate-700">
-                      Total: <span className="font-bold text-sky-700">${totalCarrito.toFixed(2)}</span>
-                    </p>
-                    <button
-                      type="button"
-                      onClick={finalizarCompra}
-                      className="mt-3 w-full rounded-lg bg-sky-500 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-600"
-                    >
-                      Finalizar compra
-                    </button>
-                  </div>
-                </>
-              )}
-            </aside>
-          </section>
-        ) : (
-          <section className="space-y-6">
-            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-sky-200">
-              <h2 className="text-xl font-bold text-sky-700">Resumen y Analitica</h2>
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                <div className="rounded-lg bg-sky-50 p-3 ring-1 ring-sky-200">
-                  <p className="text-xs text-slate-600">Total de entradas</p>
-                  <p className="text-xl font-bold text-emerald-700">
-                    {resumenAlmacen.totalEntradas}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-sky-50 p-3 ring-1 ring-sky-200">
-                  <p className="text-xs text-slate-600">Total de salidas</p>
-                  <p className="text-xl font-bold text-rose-700">
-                    {resumenAlmacen.totalSalidas}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-sky-50 p-3 ring-1 ring-sky-200">
-                  <p className="text-xs text-slate-600">Productos con bajo stock</p>
-                  <p className="text-xl font-bold text-sky-700">
-                    {resumenAlmacen.productosBajoStock.length}
-                  </p>
-                </div>
+            <div className="mt-6 space-y-5">
+              <div>
+                <label htmlFor="product-name" className="block text-sm font-medium text-zinc-800">
+                  Nombre del producto
+                </label>
+                <input
+                  id="product-name"
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => {
+                    setFormError(null);
+                    setForm((f) => ({ ...f, name: e.target.value }));
+                  }}
+                  placeholder="Ej. Computadora portátil"
+                  className="mt-1.5 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-zinc-900 placeholder:text-zinc-400 outline-none ring-zinc-900/5 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                />
               </div>
 
-              <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                <div className="rounded-lg bg-sky-50 p-4 ring-1 ring-sky-200">
-                  <h3 className="text-sm font-bold text-slate-800">Productos mas utilizados</h3>
-                  {resumenAlmacen.productosMasUtilizados.length === 0 ? (
-                    <p className="mt-2 text-sm text-slate-600">Aun no hay salidas registradas.</p>
-                  ) : (
-                    <ul className="mt-2 space-y-1 text-sm text-slate-700">
-                      {resumenAlmacen.productosMasUtilizados.map((item) => (
-                        <li key={item.codigo}>
-                          {item.nombre} ({item.codigo}): {item.total}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <div className="rounded-lg bg-sky-50 p-4 ring-1 ring-sky-200">
-                  <h3 className="text-sm font-bold text-slate-800">Conclusiones del control</h3>
-                  <p className="mt-2 text-sm text-slate-700">
-                    {resumenAlmacen.productosBajoStock.length > 0
-                      ? "Se recomienda priorizar abastecimiento de productos en nivel minimo o critico."
-                      : "El inventario se mantiene estable respecto al stock minimo configurado."}
-                  </p>
-                  <p className="mt-2 text-sm text-slate-700">
-                    {resumenAlmacen.totalSalidas > resumenAlmacen.totalEntradas
-                      ? "Las salidas superan a las entradas; monitorea rotacion para evitar quiebres de stock."
-                      : "Las entradas son suficientes para sostener la operacion actual del almacen."}
-                  </p>
-                </div>
+              <div>
+                <label htmlFor="product-details" className="block text-sm font-medium text-zinc-800">
+                  Detalle
+                </label>
+                <textarea
+                  id="product-details"
+                  value={form.details}
+                  onChange={(e) => {
+                    setFormError(null);
+                    setForm((f) => ({ ...f, details: e.target.value }));
+                  }}
+                  placeholder="Describe las características principales..."
+                  rows={4}
+                  className="mt-1.5 w-full resize-y rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-zinc-900 placeholder:text-zinc-400 outline-none ring-zinc-900/5 transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                />
               </div>
-            </div>
 
-            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-sky-200">
-              <h2 className="text-xl font-bold text-sky-700">Proveedores Ficticios</h2>
-              <ul className="mt-3 grid gap-2 sm:grid-cols-3">
-                {proveedores.map((proveedor) => (
-                  <li
-                    key={proveedor}
-                    className="rounded-md bg-sky-50 px-3 py-2 text-sm text-slate-700 ring-1 ring-sky-200"
+              <div>
+                <label htmlFor="product-value" className="block text-sm font-medium text-zinc-800">
+                  Valor
+                </label>
+                <div className="mt-1.5 flex overflow-hidden rounded-lg border border-zinc-200 bg-white ring-zinc-900/5 transition focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20">
+                  <span
+                    className="flex items-center border-r border-zinc-200 bg-zinc-50 px-3 text-sm font-semibold text-zinc-700"
+                    aria-hidden
                   >
-                    {proveedor}
+                    $
+                  </span>
+                  <input
+                    id="product-value"
+                    type="text"
+                    inputMode="decimal"
+                    value={form.value}
+                    onChange={(e) => {
+                      setFormError(null);
+                      setForm((f) => ({ ...f, value: e.target.value }));
+                    }}
+                    placeholder="0.00"
+                    className="min-w-0 flex-1 border-0 bg-transparent px-3 py-2.5 text-zinc-900 placeholder:text-zinc-400 outline-none"
+                  />
+                </div>
+              </div>
+
+              {formError ? (
+                <p className="text-sm text-red-600" role="alert">
+                  {formError}
+                </p>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={handleAddProduct}
+                className="w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600"
+              >
+                + Agregar Producto
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="flex min-h-[320px] flex-1 flex-col">
+          <div className="flex h-full min-h-0 flex-1 flex-col rounded-xl border border-zinc-100 bg-white p-6 shadow-md shadow-zinc-200/50">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <h2 className="text-lg font-bold text-zinc-900 sm:text-xl">Vitrina de Productos</h2>
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-emerald-200/80">
+                [{products.length}] Artículos registrados
+              </span>
+            </div>
+
+            {products.length === 0 ? (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 py-12 text-center">
+                <BoxIcon className="text-zinc-300" />
+                <h3 className="text-base font-semibold text-zinc-800 sm:text-lg">
+                  Tu catálogo está vacío
+                </h3>
+                <p className="max-w-sm text-sm text-zinc-500">
+                  Registra tu primer producto en el panel izquierdo para verlo aparecer aquí
+                  instantáneamente.
+                </p>
+              </div>
+            ) : (
+              <ul className="mt-6 flex max-h-[min(60vh,520px)] flex-col gap-3 overflow-y-auto pr-1">
+                {products.map((product) => (
+                  <li
+                    key={product.id}
+                    className="rounded-lg border border-zinc-100 bg-zinc-50/50 p-4 shadow-sm ring-1 ring-zinc-100"
+                  >
+                    <p className="font-semibold text-zinc-900">{product.name}</p>
+                    <p className="mt-1 text-sm text-zinc-600">{product.details}</p>
+                    <p className="mt-2 text-sm font-bold text-emerald-700">
+                      ${product.value.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
                   </li>
                 ))}
               </ul>
-            </div>
-
-            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-sky-200">
-              <h2 className="text-xl font-bold text-sky-700">Registrar Producto</h2>
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                <input
-                  type="text"
-                  placeholder="Codigo (ej. A021)"
-                  value={nuevoProducto.codigo}
-                  onChange={(event) =>
-                    setNuevoProducto((prev) => ({ ...prev, codigo: event.target.value }))
-                  }
-                  className="rounded-md border border-sky-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                />
-                <input
-                  type="text"
-                  placeholder="Nombre"
-                  value={nuevoProducto.nombre}
-                  onChange={(event) =>
-                    setNuevoProducto((prev) => ({ ...prev, nombre: event.target.value }))
-                  }
-                  className="rounded-md border border-sky-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                />
-                <input
-                  type="text"
-                  placeholder="Descripcion"
-                  value={nuevoProducto.descripcion}
-                  onChange={(event) =>
-                    setNuevoProducto((prev) => ({ ...prev, descripcion: event.target.value }))
-                  }
-                  className="rounded-md border border-sky-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                />
-                <input
-                  type="text"
-                  placeholder="Unidad"
-                  value={nuevoProducto.unidad}
-                  onChange={(event) =>
-                    setNuevoProducto((prev) => ({ ...prev, unidad: event.target.value }))
-                  }
-                  className="rounded-md border border-sky-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="Stock minimo"
-                  value={nuevoProducto.stock_minimo}
-                  onChange={(event) =>
-                    setNuevoProducto((prev) => ({
-                      ...prev,
-                      stock_minimo: event.target.value,
-                    }))
-                  }
-                  className="rounded-md border border-sky-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="Stock actual"
-                  value={nuevoProducto.stock_actual}
-                  onChange={(event) =>
-                    setNuevoProducto((prev) => ({
-                      ...prev,
-                      stock_actual: event.target.value,
-                    }))
-                  }
-                  className="rounded-md border border-sky-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                />
-                <input
-                  type="number"
-                  min={0}
-                  step="0.01"
-                  placeholder="Precio"
-                  value={nuevoProducto.precio}
-                  onChange={(event) =>
-                    setNuevoProducto((prev) => ({
-                      ...prev,
-                      precio: event.target.value,
-                    }))
-                  }
-                  className="rounded-md border border-sky-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={registrarProducto}
-                className="mt-4 rounded-md bg-sky-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-600"
-              >
-                Registrar producto
-              </button>
-            </div>
-
-            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-sky-200">
-              <h2 className="text-xl font-bold text-sky-700">Inventario Actual</h2>
-              <div className="mt-4 overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="bg-sky-100 text-slate-700">
-                    <tr>
-                      <th className="px-3 py-2">Codigo</th>
-                      <th className="px-3 py-2">Producto</th>
-                      <th className="px-3 py-2">Stock actual</th>
-                      <th className="px-3 py-2">Stock minimo</th>
-                      <th className="px-3 py-2">Proveedor</th>
-                      <th className="px-3 py-2">Entrada</th>
-                      <th className="px-3 py-2">Accion</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inventario.map((producto) => {
-                      const alerta = producto.stock_actual <= producto.stock_minimo;
-                      return (
-                        <tr key={producto.codigo} className="border-b border-sky-100">
-                          <td className="px-3 py-2 font-mono">{producto.codigo}</td>
-                          <td className="px-3 py-2">
-                            <p className="font-semibold">{producto.nombre}</p>
-                            <p className="text-xs text-slate-600">{producto.unidad}</p>
-                          </td>
-                          <td className={`px-3 py-2 font-semibold ${alerta ? "text-rose-700" : "text-slate-900"}`}>
-                            {producto.stock_actual}
-                          </td>
-                          <td className="px-3 py-2">{producto.stock_minimo}</td>
-                          <td className="px-3 py-2">
-                            <select
-                              value={proveedorPorProducto[producto.codigo] ?? proveedores[0] ?? ""}
-                              onChange={(event) =>
-                                setProveedorPorProducto((prev) => ({
-                                  ...prev,
-                                  [producto.codigo]: event.target.value,
-                                }))
-                              }
-                              className="rounded-md border border-sky-300 bg-white px-2 py-1 outline-none focus:ring-2 focus:ring-sky-300"
-                            >
-                              {proveedores.map((proveedor) => (
-                                <option key={proveedor} value={proveedor}>
-                                  {proveedor}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="px-3 py-2">
-                            <input
-                              type="number"
-                              min={1}
-                              value={entradaPorProducto[producto.codigo] ?? ""}
-                              onChange={(event) =>
-                                setEntradaPorProducto((prev) => ({
-                                  ...prev,
-                                  [producto.codigo]: event.target.value,
-                                }))
-                              }
-                              className="w-24 rounded-md border border-sky-300 px-2 py-1 outline-none focus:ring-2 focus:ring-sky-300"
-                              placeholder="0"
-                            />
-                          </td>
-                          <td className="px-3 py-2">
-                            <button
-                              type="button"
-                              onClick={() => registrarEntrada(producto.codigo)}
-                              className="rounded-md bg-sky-500 px-3 py-1 text-xs font-semibold text-white hover:bg-sky-600"
-                            >
-                              Registrar entrada
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-sky-200">
-              <h2 className="text-xl font-bold text-sky-700">Registro de Salidas</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                Cada salida incluye fecha, producto, cantidad, destino y motivo.
-              </p>
-              <div className="mt-4 grid gap-3 md:grid-cols-5">
-                <input
-                  type="date"
-                  value={salidaForm.fecha}
-                  onChange={(event) =>
-                    setSalidaForm((prev) => ({ ...prev, fecha: event.target.value }))
-                  }
-                  className="rounded-md border border-sky-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                />
-                <select
-                  value={salidaForm.codigo}
-                  onChange={(event) =>
-                    setSalidaForm((prev) => ({ ...prev, codigo: event.target.value }))
-                  }
-                  className="rounded-md border border-sky-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                >
-                  {inventario.map((producto) => (
-                    <option key={producto.codigo} value={producto.codigo}>
-                      {producto.codigo} - {producto.nombre}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="number"
-                  min={1}
-                  placeholder="Cantidad"
-                  value={salidaForm.cantidad}
-                  onChange={(event) =>
-                    setSalidaForm((prev) => ({ ...prev, cantidad: event.target.value }))
-                  }
-                  className="rounded-md border border-sky-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                />
-                <input
-                  type="text"
-                  placeholder="Destino (cliente o area)"
-                  value={salidaForm.destino}
-                  onChange={(event) =>
-                    setSalidaForm((prev) => ({ ...prev, destino: event.target.value }))
-                  }
-                  className="rounded-md border border-sky-300 px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                />
-                <select
-                  value={salidaForm.motivo}
-                  onChange={(event) =>
-                    setSalidaForm((prev) => ({ ...prev, motivo: event.target.value }))
-                  }
-                  className="rounded-md border border-sky-300 bg-white px-3 py-2 outline-none focus:ring-2 focus:ring-sky-300"
-                >
-                  <option value="Venta">Venta</option>
-                  <option value="Merma">Merma</option>
-                  <option value="Uso interno">Uso interno</option>
-                </select>
-              </div>
-              <button
-                type="button"
-                onClick={registrarSalidaManual}
-                className="mt-4 rounded-md bg-sky-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-600"
-              >
-                Registrar salida
-              </button>
-              {mensajeAdmin ? (
-                <p className="mt-2 text-sm font-medium text-slate-700">{mensajeAdmin}</p>
-              ) : null}
-            </div>
-
-            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-sky-200">
-              <h2 className="text-xl font-bold text-sky-700">Historial de Movimientos</h2>
-              {movimientos.length === 0 ? (
-                <p className="mt-3 text-sm text-slate-600">No hay movimientos registrados.</p>
-              ) : (
-                <div className="mt-4 overflow-x-auto">
-                  <table className="min-w-full text-left text-sm">
-                    <thead className="bg-sky-100 text-slate-700">
-                      <tr>
-                        <th className="px-3 py-2">Fecha</th>
-                        <th className="px-3 py-2">Tipo</th>
-                        <th className="px-3 py-2">Codigo</th>
-                        <th className="px-3 py-2">Producto</th>
-                        <th className="px-3 py-2">Cantidad</th>
-                        <th className="px-3 py-2">Destino</th>
-                        <th className="px-3 py-2">Proveedor</th>
-                        <th className="px-3 py-2">Motivo</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {movimientos.map((movimiento) => (
-                        <tr key={movimiento.id} className="border-b border-sky-100">
-                          <td className="px-3 py-2">{new Date(movimiento.fecha).toLocaleString("es-MX")}</td>
-                          <td
-                            className={`px-3 py-2 font-semibold ${
-                              movimiento.tipo === "Entrada" ? "text-emerald-700" : "text-rose-700"
-                            }`}
-                          >
-                            {movimiento.tipo}
-                          </td>
-                          <td className="px-3 py-2 font-mono">{movimiento.codigo}</td>
-                          <td className="px-3 py-2">{movimiento.nombre}</td>
-                          <td className="px-3 py-2">{movimiento.cantidad}</td>
-                          <td className="px-3 py-2">{movimiento.destino ?? "-"}</td>
-                          <td className="px-3 py-2">{movimiento.proveedor ?? "-"}</td>
-                          <td className="px-3 py-2">{movimiento.motivo}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
+            )}
+          </div>
+        </section>
       </main>
+
+      <footer className="mt-auto border-t border-zinc-800 bg-zinc-900 py-5">
+        <p className="px-4 text-center text-sm text-white">
+          Desarrollado por [INSERTA AQUÍ TU NOMBRE COMPLETO] - Grupo: [INSERTA AQUÍ TU GRUPO]
+        </p>
+      </footer>
     </div>
   );
 }
