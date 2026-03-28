@@ -209,7 +209,7 @@ export default function Home() {
 
       <footer className="mt-auto border-t border-zinc-800 bg-zinc-900 py-5">
         <p className="px-4 text-center text-sm text-white">
-          Desarrollado por [INSERTA AQUÍ TU NOMBRE COMPLETO] - Grupo: [INSERTA AQUÍ TU GRUPO]
+          Desarrollado por Jose Emilio Motta Mercado 4DPGM
         </p>
       </footer>
     </div>
